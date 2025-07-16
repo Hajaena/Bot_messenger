@@ -25,7 +25,7 @@ async function Mamokatra(fangatahana, valiny) {
   const { tany_fanoratana, someso, senderId } = fangatahana.body;
 
   if (!tany_fanoratana || typeof tany_fanoratana !== 'string') {
-    console.error('⛔️ Texte invalide reçu:', tany_fanoratana);
+    console.error('Texte invalide reçu:', tany_fanoratana);
     return valiny.status(400).json({ error: 'Misy zavatra tsy ampy na tsy mitombona' });
   }
 
@@ -78,10 +78,6 @@ Tu es "Tsara ho Fantatra", un assistant culturel malgache.
 📍Localisation détectée : ${toerana_mis_anao ? toerana_mis_anao : 'Non spécifiée'}.
  
 
-      
-
-
-
 📚 Connaissances disponibles :
 ${toe_javatra}
 
@@ -109,7 +105,7 @@ ${tany_fanoratana}
 🔒 Limite : ta réponse ne doit pas dépasser les 150 tokens.
 `.trim();
 
-  console.log("Toerana misy ahy: 🤧🤧🤧🤧 ", toerana_mis_anao)
+  console.log("Toerana misy ahy:", toerana_mis_anao)
 
   try {
     // 🎬 Lecture simulée
@@ -120,7 +116,7 @@ ${tany_fanoratana}
 
 
     // Pause pendant que l'utilisateur voit "Tsara ho Fantatra est en train d'écrire..."
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // 🧠 Début de rédaction simulée (typing_on)
     callSendAPI({
@@ -138,7 +134,7 @@ ${tany_fanoratana}
     // ⏳ Attente proportionnelle à la longueur de la réponse
     setTimeout(() => {
       valiny.json({ result: teny });
-    }, Math.min(teny.length * 10, 2000));
+    }, Math.min(teny.length * 10, 1500));
   } catch (err) {
     console.error('Erreur génération:', err);
     valiny.status(500).json({
