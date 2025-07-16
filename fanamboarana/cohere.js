@@ -6,7 +6,7 @@ async function generateWithCohere(tany_fanoratana) {
   const response = await cohere.generate({
     model: 'command-r-plus',
     prompt: tany_fanoratana,
-    max_tokens: 300,
+    max_tokens: 250,
     temperature: 0.7,
   });
 
