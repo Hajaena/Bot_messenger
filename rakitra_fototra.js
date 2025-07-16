@@ -18,7 +18,7 @@ const lavaka = process.env.PORT || 3000;
 
 tetikasa.use(corsa());
 tetikasa.use(vatana_i_parsera.json());
-tetikasa.use(express.static(path.join(__dirname, '../backend/Public')));
+tetikasa.use(express.static(path.join(__dirname, '../afara/Public')));
 tetikasa.use(express.static('public'));
 
 tetikasa.use('/generate', mamokatra_lalana_maro);
