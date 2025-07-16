@@ -47,7 +47,7 @@ async function someso_Miditra(fangatahana, valiny) {
           });
           console.log('Ataka : ', tany_fisoratana)
           const tahiry = await valinteny.json()
-          const teny = tahiry.result || "Miala tsiny, tsy afaka mamaly anao aho amin'izao fotoana izao"
+          const teny = tahiry.result || "Vous avez atteint la limite ☹️.\nVeuillez réessayer plus tard."
           console.log('Valinteny avy any @ server:', tahiry)
 
           // manampy ny bot ami'ny hevitra taloha
