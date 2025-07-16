@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Localisation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 200px;
+    }
+
+    button {
+      font-size: 1.2em;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    #result {
+      margin-top: 20px;
+      color: green;
+    }
+
+    #error {
+      margin-top: 20px;
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Souhaitez-vous partager votre position ?</h2>
+  <p>Cliquez sur le bouton ci-dessous si vous souhaitez partager votre position</p>
+  <button id="partagerBtn" onclick="maka_ny_toerana_misy_ahy()">Partager ma position</button>
+
+  <div id="result"></div>
+  <div id="error"></div>
+
+  <script>
+    function maka_ny_Marika_tokana_ny_mpandefa() {
+      const Masontsivana = new URLSearchParams(window.location.search);
+      return Masontsivana.get('senderId');
+    }
+
+    function maka_ny_toerana_misy_ahy() {
+      const bouton = document.getElementById('partagerBtn');
+      bouton.disabled = true;
+      bouton.textContent = "Chargement...";
+
+      if (!navigator.geolocation) {
+        document.getElementById('error').textContent = "Ton navigateur ne prend pas en charge la géolocalisation.";
+        bouton.disabled = false;
+        bouton.textContent = "Partager ma position";
+        return;
+      }
+
+      document.getElementById('error').textContent = "";
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const long = position.coords.longitude;
+        const senderId = maka_ny_Marika_tokana_ny_mpandefa();
+
+        try {
+          const response = await fetch('/api/receive-location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senderId, lat, long })
+          });
+          const text = await response.text();
+          if (response.ok) {
+            document.getElementById('result').textContent = text;
+            bouton.textContent = "Position partagée"
+          } else {
+            document.getElementById('error').textContent = text;
+            bouton.disabled = false;
+            bouton.textContent = "Partager ma position";
+          }
+
+        } catch (e) {
+          document.getElementById('error').textContent = "Erreur réseau.";
+          bouton.disabled = false;
+          bouton.textContent = "Partager ma position";
+        }
+      }, (err) => {
+        document.getElementById('error').textContent = "Impossible d'obtenir la position : " + err.message;
+        bouton.disabled = false;
+        bouton.textContent = "Partager ma position";
+      });
+    }
+  </script>
+</body>
+
+</html>
