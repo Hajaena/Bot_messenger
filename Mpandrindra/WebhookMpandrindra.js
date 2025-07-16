@@ -39,7 +39,7 @@ async function someso_Miditra(fangatahana, valiny) {
         const history = tafatafa[ny_mpandefa].slice(-10);
 
         try {
-          const valinteny = await mandefa('http://localhost:3000/generate', {
+          const valinteny = await mandefa('https://tsarahofantatra.onrender.com/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tany_fanoratana: tany_fisoratana, messages: history, senderId: ny_mpandefa }), //tany_fanoratana
