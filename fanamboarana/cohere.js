@@ -3,7 +3,7 @@ const { CohereClient } = require('cohere-ai');
 const cohere = new CohereClient({ apiKey: process.env.COHERE_API_KEY });
 
 async function generateWithCohere(tany_fanoratana) {
-  const response = await cohere.generate({
+  const response = await cohere.chat({
     model: 'command-r-plus',
     prompt: tany_fanoratana,
     max_tokens: 250,
