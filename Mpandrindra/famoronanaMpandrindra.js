@@ -39,6 +39,48 @@ function estUneSalutation(texte) {
   return salutations.test(texte.trim());
 }
 
+// 🆕 Fonction pour détecter si l'utilisateur veut plus de détails
+function veutPlusDeDetails(texte) {
+  const patterns = [
+    /\ben savoir plus\b/i,
+    /\bplus de (détails|infos|informations)\b/i,
+    /\bexplique(-moi)?\b/i,
+    /\bdis(-moi)? (plus|tout|davantage)\b/i,
+    /\bdétaille\b/i,
+    /\bparle(-moi)? de\b/i,
+    /\bquoi d'autre\b/i,
+    /\bet\?\s*$/i,
+    /\bc'est quoi\b/i,
+    /\bcomment\b/i,
+    /\bpourquoi\b/i
+  ];
+  return patterns.some(pattern => pattern.test(texte));
+}
+
+// 🆕 Fonction pour détecter les demandes de devinettes
+function veutAnkamantatra(texte) {
+  const patterns = [
+    /\bankamantatra\b/i,
+    /\bdevinette\b/i,
+    /\bdevine\b/i,
+    /\bénigme\b/i
+  ];
+  return patterns.some(pattern => pattern.test(texte));
+}
+
+// 🆕 Fonction pour détecter les demandes d'apprentissage
+function veutHianatra(texte) {
+  const patterns = [
+    /\bhianatra\b/i,
+    /\bétudier\b/i,
+    /\bapprendre\b/i,
+    /\béducation\b/i,
+    /\benseigne(-moi)?\b/i,
+    /\bapprends(-moi)?\b/i
+  ];
+  return patterns.some(pattern => pattern.test(texte));
+}
+
 async function Mamokatra(fangatahana, valiny) {
   const { tany_fanoratana, someso, senderId } = fangatahana.body;
 
@@ -72,6 +114,9 @@ async function Mamokatra(fangatahana, valiny) {
   const tahiry = getHistorique(senderId);
   const dejaSalue = aDejaSalue(tahiry);
   const cestUneSalutation = estUneSalutation(tany_fanoratana);
+  const veutDetails = veutPlusDeDetails(tany_fanoratana);
+  const demandeAnkamantatra = veutAnkamantatra(tany_fanoratana);
+  const demandeHianatra = veutHianatra(tany_fanoratana);
 
   // 🆕 Contexte de conversation plus concis (seulement 5 derniers messages)
   const resaka_teo_aloha = tahiry
@@ -98,7 +143,7 @@ ${resaka_teo_aloha ? `💬 Historique récent :\n${resaka_teo_aloha}` : ''}
 
 ❓ Question actuelle : "${tany_fanoratana}"
 
-🎯 RÈGLES STRICTES :
+🎯 RÈGLES DE RÉPONSE :
 
 ${dejaSalue ? '⚠️ TU AS DÉJÀ SALUÉ dans cette conversation. NE répète PAS "Bonjour" ou "Salama".' : ''}
 
@@ -106,20 +151,51 @@ ${cestUneSalutation && !dejaSalue ?
       '👋 C\'est une simple salutation. Réponds brièvement (ex: "Salama! Comment puis-je t\'aider avec la culture malgache?") puis STOP.'
       : ''}
 
-- **MAX 2-3 phrases courtes** (80 tokens max)
-- **Aucune structure avec tirets ou listes** sauf si nécessaire
+${demandeAnkamantatra ?
+      `🎁 L'utilisateur demande une DEVINETTE (ankamantatra). 
+  Tu DOIS proposer une devinette culturelle malgache avec sa réponse.
+  Format attendu :
+  "Voici une devinette malgache : [énoncé de la devinette] 🤔
+  
+  Réponse : [la réponse] ✨
+  
+  [Courte explication culturelle si pertinent]"
+  Exemple : "Mandeha tsy manana tongotra, miteny tsy manana vava. Inona izany? 🤔
+  Réponse : Ny taratasy (la lettre) ✉️"`
+      : ''}
+
+${demandeHianatra ?
+      `🎓 L'utilisateur veut APPRENDRE/ÉTUDIER la culture malgache.
+  Propose une idée éducative concrète et engageante :
+  - Un aspect culturel intéressant à découvrir
+  - Une pratique traditionnelle à comprendre
+  - Un conseil pour mieux connaître la culture
+  Sois pédagogue et motivant ! (max 150 tokens)`
+      : ''}
+
+${veutDetails && !demandeAnkamantatra && !demandeHianatra ?
+      '📖 L\'utilisateur veut plus de détails. Tu peux répondre avec 4-6 phrases (max 150 tokens) pour bien expliquer.'
+      :
+      !demandeAnkamantatra && !demandeHianatra ? '💬 Réponse courte : MAX 2-3 phrases (80 tokens max)' : ''
+    }
+
 - **Ton conversationnel** : parle comme un ami, pas comme un document
 - **Émojis minimaux** : 1-2 max par réponse
 - **Ne répète JAMAIS les informations** déjà données dans l'historique
-- Si pas d'info disponible → propose le lien : ${lalana_amin_ny_toeranao}
-- Si question vague → demande précision simplement
 - **N'invente rien**, utilise uniquement les données fournies
 
 ${!tanana_voatendry && !toerana_mis_anao ?
-      '⚠️ Pas de localisation → demande poliment : "De quel village veux-tu parler ?"'
+      `⚠️ AUCUNE LOCALISATION détectée → Tu DOIS proposer le lien de partage :
+  "Je n'ai pas encore ta localisation 📍. Partage-la ici pour que je puisse mieux t'aider : ${lalana_amin_ny_toeranao}
+  
+  Ou dis-moi simplement de quel village tu veux parler ! 😊"`
       : ''}
 
-Réponds maintenant de façon ULTRA CONCISE et NATURELLE :
+${!toe_javatra && tanana_voatendry ?
+      `⚠️ Pas d'infos sur "${tanana_voatendry}" dans la base. Propose le lien : ${lalana_amin_ny_toeranao}`
+      : ''}
+
+Réponds maintenant de façon NATURELLE :
 `.trim();
 
   console.log("Toerana misy ahy:", toerana_mis_anao)
@@ -145,7 +221,7 @@ Réponds maintenant de façon ULTRA CONCISE et NATURELLE :
     // ⏳ Délai plus court et proportionnel
     setTimeout(() => {
       valiny.json({ result: teny });
-    }, Math.min(teny.length * 8, 1200)); 
+    }, Math.min(teny.length * 8, 1200)); // Réduit de 10 à 8, max 1.2s au lieu de 1.5s
   } catch (err) {
     console.error('Erreur génération:', err);
     valiny.status(500).json({
