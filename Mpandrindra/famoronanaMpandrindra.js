@@ -20,6 +20,24 @@ function callSendAPI(body) {
     .catch(err => console.error('Erreur SendAPI:', err));
 }
 
+// 🆕 Fonction pour détecter si une salutation a déjà été faite récemment
+function aDejaSalue(historique) {
+  if (!historique || historique.length === 0) return false;
+
+  const derniers3Messages = historique.slice(-3);
+  const salutations = ['bonjour', 'salut', 'salama', 'hello', 'hi', 'bjr'];
+
+  return derniers3Messages.some(msg =>
+    msg.role === 'assistant' &&
+    salutations.some(sal => msg.contenue.toLowerCase().includes(sal))
+  );
+}
+
+// 🆕 Fonction pour détecter si c'est une simple salutation
+function estUneSalutation(texte) {
+  const salutations = /^(bonjour|salut|salama|hello|hi|bjr|bsr|bonsoir|manahoana)[\s!?.,]*$/i;
+  return salutations.test(texte.trim());
+}
 
 async function Mamokatra(fangatahana, valiny) {
   const { tany_fanoratana, someso, senderId } = fangatahana.body;
@@ -28,7 +46,6 @@ async function Mamokatra(fangatahana, valiny) {
     console.error('Texte invalide reçu:', tany_fanoratana);
     return valiny.status(400).json({ error: 'Misy zavatra tsy ampy na tsy mitombona' });
   }
-
 
   const teny_normaly = normaly(tenyNatoraly(tany_fanoratana));
   const lakile_tanana = Object.keys(Angona_Manodidina);
@@ -45,90 +62,76 @@ async function Mamokatra(fangatahana, valiny) {
 
   const mombamoba_ny_tanana = tanana_voatendry ? Angona_Manodidina[tanana_voatendry] : null;
   const toe_javatra = mombamoba_ny_tanana
-    ? `Ireto ny mombamoba an'ny ${tanana_voatendry} :\n` +
-    `Fombafomba sy fanao : ${mombamoba_ny_tanana['fombafomba sy fanao']?.join(', ') || 'mbola tsy misy'}\n` +
-    `Fady sy fandraràna : ${mombamoba_ny_tanana['fady sy fandraràna']?.join(', ') || 'mbola tsy misy'}\n` +
-    `Toro-hevitra : ${mombamoba_ny_tanana['toro-hevitra']?.join(', ') || 'tsisy toro-hevitra'}\n` +
-    `Tantara : ${mombamoba_ny_tanana['tantara'] || 'tsisy tantara'}`
-    : "⛔️ Aucune information disponible sur ce village.";
+    ? `Infos sur ${tanana_voatendry} :\n` +
+    `Coutumes : ${mombamoba_ny_tanana['fombafomba sy fanao']?.join(', ') || 'non disponibles'}\n` +
+    `Interdits : ${mombamoba_ny_tanana['fady sy fandraràna']?.join(', ') || 'non disponibles'}\n` +
+    `Conseils : ${mombamoba_ny_tanana['toro-hevitra']?.join(', ') || 'non disponibles'}\n` +
+    `Histoire : ${mombamoba_ny_tanana['tantara'] || 'non disponible'}`
+    : null;
 
-  // const tahiry = Array.isArray(someso) ? someso : [];
   const tahiry = getHistorique(senderId);
+  const dejaSalue = aDejaSalue(tahiry);
+  const cestUneSalutation = estUneSalutation(tany_fanoratana);
+
+  // 🆕 Contexte de conversation plus concis (seulement 5 derniers messages)
   const resaka_teo_aloha = tahiry
-    .slice(-15)
+    .slice(-5)
     .map(someso =>
       someso.role === 'user'
-        ? `👤 Utilisateur : ${someso.contenue}`
-        : `Tsara ho fantatra : ${someso.contenue}`
+        ? `User: ${someso.contenue}`
+        : `Tsara: ${someso.contenue}`
     )
     .join('\n');
 
   const lalana = process.env.SERVERAN_I_NGROK
   const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${senderId}`
 
-
-
+  // 🆕 Prompt complètement revu pour un style conversationnel
   const fullPrompt = `
-Tu es **Tsara ho Fantatra**, un assistant culturel malgache bienveillant et intelligent.
+Tu es Tsara ho Fantatra, assistant culturel malgache. Réponds de façon **NATURELLE et CONCISE**, comme dans une vraie conversation.
 
-🧭 Ton rôle : Répondre aux questions liées à la culture malgache (fombafomba sy fanao, fady sy fandraràna, toro-hevitra, tantara) avec clarté, authenticité et concision.
+📍 Village : ${tanana_voatendry || 'non précisé'} | Localisation : ${toerana_mis_anao || 'non précisée'}
 
-📌 Village demandé : ${tanana_voatendry || 'Non spécifié'}
-📍 Localisation détectée : ${toerana_mis_anao || 'Non spécifiée'}
+${toe_javatra ? `📚 Données disponibles :\n${toe_javatra}` : ''}
 
-📚 Connaissances disponibles :
-${toe_javatra}
+${resaka_teo_aloha ? `💬 Historique récent :\n${resaka_teo_aloha}` : ''}
 
-🗂️ Contexte de la conversation :
-(Si tu détectes une salutation récente dans l'historique, ne la répète pas.)
-${resaka_teo_aloha}
+❓ Question actuelle : "${tany_fanoratana}"
 
-💬 Question actuelle de l’utilisateur :
-${tany_fanoratana}
+🎯 RÈGLES STRICTES :
 
-🧠 Consignes :
-- Si la localisation n’est pas précisée et aucun village détecté, réponds poliment :  
-  "Pour mieux t’aider, peux-tu me préciser ta localisation (voici le lien pour la partager : ${lalana_amin_ny_toeranao}) ou le village dont tu souhaites connaître la culture ?"
+${dejaSalue ? '⚠️ TU AS DÉJÀ SALUÉ dans cette conversation. NE répète PAS "Bonjour" ou "Salama".' : ''}
 
-- Si l’utilisateur dit seulement “Bonjour”, “Salut”, "Salama" ou une autre salutation :  
-  • Réponds brièvement avec une salutation amicale (si elle n’est pas déjà présente dans l’historique)  
-  • Encourage ensuite l’utilisateur à poser une question sur la culture malgache.  
-  • N'invente pas de sujet automatiquement.
+${cestUneSalutation && !dejaSalue ?
+      '👋 C\'est une simple salutation. Réponds brièvement (ex: "Salama! Comment puis-je t\'aider avec la culture malgache?") puis STOP.'
+      : ''}
 
-- Si aucun sujet clair n’est détecté, demande poliment à l’utilisateur de préciser sa question.
-- Ne change pas de village de référence à moins que l’utilisateur en mentionne un nouveau explicitement.
-- Si la question est vague ou générale (ex : “Parle-moi de…”), propose uniquement une **brève synthèse** des 4 catégories, en une seule phrase chacune.
-- Si l'utilisateur semble avoir changé d’endroit → invite à mettre à jour sa localisation ici : ${lalana_amin_ny_toeranao}
-- Réponds uniquement à partir des données disponibles : n’invente rien.
-- Si la question concerne :
-  • les coutumes → donne uniquement les “fombafomba sy fanao”
-  • les interdits → uniquement les “fady sy fandraràna”
-  • les conseils → uniquement les “toro-hevitra”
-  • l'histoire → uniquement la “tantara” (sans extrapoler)
-- Si la demande est large ou imprécise, résume les sections disponibles de façon claire.
+- **MAX 2-3 phrases courtes** (80 tokens max)
+- **Aucune structure avec tirets ou listes** sauf si nécessaire
+- **Ton conversationnel** : parle comme un ami, pas comme un document
+- **Émojis minimaux** : 1-2 max par réponse
+- **Ne répète JAMAIS les informations** déjà données dans l'historique
+- Si pas d'info disponible → propose le lien : ${lalana_amin_ny_toeranao}
+- Si question vague → demande précision simplement
+- **N'invente rien**, utilise uniquement les données fournies
 
-🎁 Si le mot “ankamantatra” est mentionné → propose une devinette culturelle malgache + réponse.
-🎓 Si “étudier” est mentionné → propose une idée éducative sur la culture malgache.
+${!tanana_voatendry && !toerana_mis_anao ?
+      '⚠️ Pas de localisation → demande poliment : "De quel village veux-tu parler ?"'
+      : ''}
 
-🗣️ Langue : réponds uniquement en français, dans un ton amical, logique et professionnel.
-💬 Style : utilise des émojis sobres (📌, 📍, 🔹, 🎓…) pour structurer visuellement comme sur LinkedIn.
-🔒 Réponse limitée à 250 tokens maximum.
+Réponds maintenant de façon ULTRA CONCISE et NATURELLE :
 `.trim();
 
   console.log("Toerana misy ahy:", toerana_mis_anao)
 
   try {
-    // 🎬 Lecture simulée
     callSendAPI({
       recipient: { id: senderId },
       sender_action: "mark_seen"
     })
 
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Réduit à 1s
 
-    // Pause pendant que l'utilisateur voit "Tsara ho Fantatra est en train d'écrire..."
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // 🧠 Début de rédaction simulée (typing_on)
     callSendAPI({
       recipient: { id: senderId },
       sender_action: "typing_on"
@@ -136,15 +139,13 @@ ${tany_fanoratana}
 
     const teny = await generateWithCohere(fullPrompt);
 
-
-
     saveMessage(senderId, 'user', tany_fanoratana);
     saveMessage(senderId, 'assistant', teny);
 
-    // ⏳ Attente proportionnelle à la longueur de la réponse
+    // ⏳ Délai plus court et proportionnel
     setTimeout(() => {
       valiny.json({ result: teny });
-    }, Math.min(teny.length * 10, 1500));
+    }, Math.min(teny.length * 8, 1200)); 
   } catch (err) {
     console.error('Erreur génération:', err);
     valiny.status(500).json({
