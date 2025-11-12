@@ -3,14 +3,19 @@ const { CohereClient } = require('cohere-ai');
 const cohere = new CohereClient({ apiKey: process.env.COHERE_API_KEY });
 
 async function generateWithCohere(tany_fanoratana) {
-  const response = await cohere.chat({
-    model: 'command-r-plus',
-    prompt: tany_fanoratana,
-    max_tokens: 250,
-    temperature: 0.7,
-  });
+  try {
+    const response = await cohere.chat({
+      model: 'command-r-plus',
+      message: tany_fanoratana,
+      temperature: 0.7,
+      max_tokens: 250,
+    });
 
-  return response.generations[0].text;
+    return response.text;
+  } catch (error) {
+    console.error('Erreur génération:', error);
+    throw error;
+  }
 }
 
-module.exports = { generateWithCohere }
+module.exports = { generateWithCohere };
