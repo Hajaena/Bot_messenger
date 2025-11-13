@@ -150,7 +150,7 @@ CONTEXTE
 Village : ${tanana_voatendry || 'non précisé'}
 Localisation : ${toerana_mis_anao || 'non précisée'}
 ${!tanana_voatendry && !toerana_mis_anao ?
-      `IMPORTANT : Aucune localisation détectée. Commence par proposer ce lien : ${lalana_amin_ny_toeranao}` : ''}
+      `IMPORTANT : Aucune localisation détectée. Commence par proposer ce lien de partage de la position de l'utilisateur: ${lalana_amin_ny_toeranao}` : ''}
 
 ${toe_javatra || ''}
 
