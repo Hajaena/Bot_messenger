@@ -20,7 +20,7 @@ function callSendAPI(body) {
     .catch(err => console.error('Erreur SendAPI:', err));
 }
 
-// 🆕 Fonction pour détecter si une salutation a déjà été faite récemment
+// Fonction pour détecter si une salutation a déjà été faite récemment
 function aDejaSalue(historique) {
   if (!historique || historique.length === 0) return false;
 
@@ -33,13 +33,13 @@ function aDejaSalue(historique) {
   );
 }
 
-// 🆕 Fonction pour détecter si c'est une simple salutation
+// Fonction pour détecter si c'est une simple salutation
 function estUneSalutation(texte) {
   const salutations = /^(bonjour|salut|salama|hello|hi|bjr|bsr|bonsoir|manahoana)[\s!?.,]*$/i;
   return salutations.test(texte.trim());
 }
 
-// 🆕 Fonction pour détecter si l'utilisateur veut plus de détails
+// Fonction pour détecter si l'utilisateur veut plus de détails
 function veutPlusDeDetails(texte) {
   const patterns = [
     /\ben savoir plus\b/i,
@@ -57,7 +57,7 @@ function veutPlusDeDetails(texte) {
   return patterns.some(pattern => pattern.test(texte));
 }
 
-// 🆕 Fonction pour détecter les demandes de devinettes
+// Fonction pour détecter les demandes de devinettes
 function veutAnkamantatra(texte) {
   const patterns = [
     /\bankamantatra\b/i,
@@ -68,7 +68,7 @@ function veutAnkamantatra(texte) {
   return patterns.some(pattern => pattern.test(texte));
 }
 
-// 🆕 Fonction pour détecter les demandes d'apprentissage
+// Fonction pour détecter les demandes d'apprentissage
 function veutHianatra(texte) {
   const patterns = [
     /\bhianatra\b/i,
@@ -80,7 +80,8 @@ function veutHianatra(texte) {
   ];
   return patterns.some(pattern => pattern.test(texte));
 }
-// Après la fonction veutAnkamantatra
+
+// Fonction pour détecter si l'utilisateur demande la réponse à une devinette
 function veutReponseAnkamantatra(texte, historique) {
   const demandeReponse = /\b(réponse|solution|answer|c'est quoi)\b/i.test(texte);
 
@@ -129,9 +130,9 @@ async function Mamokatra(fangatahana, valiny) {
   const demandeHianatra = veutHianatra(tany_fanoratana);
   const demandeReponseAnkamantatra = veutReponseAnkamantatra(tany_fanoratana, tahiry);
 
-  // 🆕 Contexte de conversation plus concis (seulement 5 derniers messages)
+  // Contexte de conversation (8 derniers messages)
   const resaka_teo_aloha = tahiry
-    .slice(-4)
+    .slice(-8)
     .map(someso =>
       someso.role === 'user'
         ? `User: ${someso.contenue}`
@@ -142,110 +143,60 @@ async function Mamokatra(fangatahana, valiny) {
   const lalana = process.env.SERVERAN_I_NGROK
   const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${senderId}`
 
-  // 🆕 Prompt complètement revu pour un style conversationnel
-  const fullPrompt = `
-Tu es **Tsara ho Fantatra**, un assistant culturel malgache sur Messenger.
+  // ✅ PROMPT OPTIMISÉ
+  const fullPrompt = `Tu es Tsara ho Fantatra, assistant culturel malgache chaleureux et compétent.
 
-Ta mission :
-- Expliquer simplement la culture malgache (coutumes, fombafomba, fady, histoires, conseils).
-- Adapter tes réponses au village de l’utilisateur quand il est connu.
-- Parler de façon naturelle, chaleureuse et concise.
+CONTEXTE
+Village : ${tanana_voatendry || 'non précisé'}
+Localisation : ${toerana_mis_anao || 'non précisée'}
+${!tanana_voatendry && !toerana_mis_anao ?
+      `IMPORTANT : Aucune localisation détectée. Commence par proposer ce lien : ${lalana_amin_ny_toeranao}` : ''}
 
-### Contexte utilisateur
+${toe_javatra || ''}
 
-- Village détecté : ${tanana_voatendry || 'aucun'}
-- Localisation partagée : ${toerana_mis_anao || 'aucune'}
+${resaka_teo_aloha ? `CONVERSATION RÉCENTE\n${resaka_teo_aloha}\n` : ''}
 
-${toe_javatra ? `### Données culturelles disponibles pour ce village
-
-${toe_javatra}
-` : ''}
-
-${resaka_teo_aloha ? `### Historique récent de la conversation
-${resaka_teo_aloha}
-` : ''}
-
-### Message de l’utilisateur
+QUESTION ACTUELLE
 "${tany_fanoratana}"
 
----
+INSTRUCTIONS
+${dejaSalue ? '- Tu as déjà salué, ne répète pas les salutations\n' : ''}
+${cestUneSalutation && !dejaSalue ?
+      '- Salue brièvement (1-2 phrases) et propose ton aide\n' : ''}
+${demandeAnkamantatra ?
+      `- Crée UNE devinette malgache en t'inspirant de ${toe_javatra ? 'ces données culturelles' : 'la culture malgache'}
+- Donne UNIQUEMENT l'énoncé (en malgache + traduction)
+- N'inclus PAS la réponse
+- Invite à deviner ou demander la réponse
 
-### RÈGLES GÉNÉRALES
-
-1. Langue :
-   - Réponds principalement en malgache simple.
-   - Tu peux ajouter une courte phrase de clarification en français si utile.
-2. Ton :
-   - Ton amical, comme un ami qui explique.
-   - 1 à 2 émojis maximum.
-3. Longueur :
-   - Réponse normale : 2–3 phrases.
-   - Si l’utilisateur demande “plus de détails”, tu peux aller jusqu’à 8–10 phrases.
-4. Ne répète pas ce qui est déjà clairement expliqué dans ta réponse précédente.
-
----
-
-### CAS SPÉCIAUX À GÉRER
-
-${!tanana_voatendry && !toerana_mis_anao ? `
-▶ CAS 1 : aucune localisation connue
-- Tu dois commencer par dire que tu n’as pas encore sa localisation.
-- Propose le lien suivant : ${lalana_amin_ny_toeranao}
-- Propose aussi qu’il te dise directement le nom du village.
-- Ensuite, donne une réponse générale sur la culture malgache liée à sa question.
+Format :
+"[Énoncé malgache] 🤔
+[Traduction]
+Quelle est ta réponse ?"
 ` : ''}
-
-${cestUneSalutation && !dejaSalue ? `
-▶ CAS 2 : simple salutation
-- Réponds très brièvement :
-  Exemple : "Salama 😊 Inona no azoko anampiana anao momba ny kolontsaina malagasy ?"
-- Ne fais rien d’autre dans ce message.
+${demandeReponseAnkamantatra ?
+      `- Identifie la devinette dans l'historique
+- Donne la réponse en malgache et français
+- Ajoute une brève explication (2-3 phrases)
 ` : ''}
-
-${demandeAnkamantatra ? `
-▶ CAS 3 : l’utilisateur veut une devinette (ankamantatra)
-- Propose UNE seule devinette malgache.
-- Si des données de village existent, inspire-toi-en, sinon reste général.
-- NE DONNE PAS la réponse.
-- Format :
-  "Ity misy ankamantatra iray : [devinette en malgache] 🤔
-   Fantatrao ve ny valiny ? Lazao ahy aloha, na soraty hoe 'réponse' raha te-hahafantatra ianao."
+${demandeHianatra ?
+      `- Propose un contenu éducatif structuré (4-6 phrases)
+- Explique un aspect culturel intéressant
+- Sois pédagogue et motivant
 ` : ''}
+${veutDetails && !demandeAnkamantatra && !demandeHianatra ?
+      '- Développe ta réponse précédente (6-8 phrases)\n- Ajoute exemples et anecdotes\n' :
+      !demandeAnkamantatra && !demandeHianatra ? '- Réponds de façon concise (2-4 phrases)\n' : ''}
+${!toe_javatra && tanana_voatendry ?
+      `- Aucune donnée pour "${tanana_voatendry}", propose le lien : ${lalana_amin_ny_toeranao}\n` : ''}
 
-${demandeReponseAnkamantatra ? `
-▶ CAS 4 : l’utilisateur demande la réponse à la devinette
-- Donne la réponse, puis une courte explication culturelle (1–2 phrases).
-- Format :
-  "Valiny : [réponse en malgache] ✨
-   [explication courte en français ou malgache]."
-` : ''}
+STYLE
+- Ton naturel et conversationnel
+- Base-toi uniquement sur les données fournies
+- Ne répète pas les infos de l'historique
+- 1-2 émojis maximum
 
-${demandeHianatra ? `
-▶ CAS 5 : l’utilisateur veut apprendre (mode apprentissage)
-- Propose un petit "cours" simple sur un thème culturel (fombafomba, fady, fomba fiarahabana, etc.).
-- Structure :
-  1) Explication courte
-  2) Exemple concret
-  3) Petite question pour l’encourager à continuer.
-` : ''}
-
-${veutDetails && !demandeAnkamantatra && !demandeHianatra ? `
-▶ CAS 6 : l’utilisateur veut plus de détails
-- Donne une explication plus complète (8–10 phrases maximum).
-` : ''}
-
-${!toe_javatra && tanana_voatendry ? `
-▶ CAS 7 : village connu mais pas dans la base
-- Explique que tu n’as pas encore d’infos précises sur ce village.
-- Invite l’utilisateur à contribuer plus tard.
-- Propose le lien : ${lalana_amin_ny_toeranao}
-- Donne quand même une réponse générale sur la culture de la région ou de Madagascar.
-` : ''}
-
----
-
-Maintenant, rédige directement la meilleure réponse pour l’utilisateur, sans expliquer ta logique interne.
-`.trim();
+Réponds maintenant :`.trim();
 
   console.log("Toerana misy ahy:", toerana_mis_anao)
 
@@ -255,7 +206,7 @@ Maintenant, rédige directement la meilleure réponse pour l’utilisateur, sans
       sender_action: "mark_seen"
     })
 
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Réduit à 1s
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     callSendAPI({
       recipient: { id: senderId },
@@ -267,10 +218,10 @@ Maintenant, rédige directement la meilleure réponse pour l’utilisateur, sans
     saveMessage(senderId, 'user', tany_fanoratana);
     saveMessage(senderId, 'assistant', teny);
 
-    // ⏳ Délai plus court et proportionnel
+    // Délai proportionnel à la longueur de la réponse
     setTimeout(() => {
       valiny.json({ result: teny });
-    }, Math.min(teny.length * 8, 1200)); // Réduit de 10 à 8, max 1.2s au lieu de 1.5s
+    }, Math.min(teny.length * 8, 1200));
   } catch (err) {
     console.error('Erreur génération:', err);
     valiny.status(500).json({
