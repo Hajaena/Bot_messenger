@@ -27,12 +27,12 @@ async function someso_Miditra(fangatahana, valiny) {
 
       if (lanonana_webhook.message && lanonana_webhook.message.text) {
         const tany_fisoratana = lanonana_webhook.message.text
-        // if (!tafatafa[ny_mpandefa]) {
-        //   const lalana = process.env.SERVERAN_I_NGROK
-        //   const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${ny_mpandefa}`;
-        //   const localisationMsg = "Nous vous invitons à partager votre localisation afin que vous puissiez recevoir toute l'aide disponible ☺️\n\n " + lalana_amin_ny_toeranao
-        //   await mandefaSomeso(ny_mpandefa, localisationMsg)
-        // }
+        if (!tafatafa[ny_mpandefa]) {
+          const lalana = process.env.SERVERAN_I_NGROK
+          const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${ny_mpandefa}`;
+          const localisationMsg = "Nous vous invitons à partager votre localisation afin que vous puissiez recevoir toute l'aide disponible ☺️\n\n " + lalana_amin_ny_toeranao
+          await mandefaSomeso(ny_mpandefa, localisationMsg)
+        }
 
         tafatafa[ny_mpandefa] = tafatafa[ny_mpandefa] || [];
         tafatafa[ny_mpandefa].push({ role: 'user', contenue: tany_fisoratana });
