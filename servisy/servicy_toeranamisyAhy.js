@@ -13,9 +13,9 @@ const makaFanazavanaFanampinymombanyToeranamisyanao = async (Mitsangana, Mitsiva
         if (tahiry.results && tahiry.results.length > 0) {
             const zavatra = tahiry.results[0].components;
 
-            const manodidina = zavatra.suburb || zavatra.neighbourhood || zavatra.city_district || 'Tsy fantatra';
-            const tanana = zavatra.city || zavatra.town || zavatra.village || 'Tsy fantatra';
-            const firenena = zavatra.country || 'Tsy fantatra';
+            const manodidina = zavatra.suburb || zavatra.neighbourhood || zavatra.city_district || 'inconnu';
+            const tanana = zavatra.city || zavatra.town || zavatra.village || 'inconnu';
+            const firenena = zavatra.country || 'inconnu';
             console.log("Tanana :", tanana);
 
             return { Manodidina: manodidina, Renivohitra: tanana, Firenena: firenena };

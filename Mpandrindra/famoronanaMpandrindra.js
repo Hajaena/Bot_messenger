@@ -136,6 +136,12 @@ async function Mamokatra(fangatahana, valiny) {
 Tu es Tsara ho Fantatra, assistant culturel malgache. Réponds de façon **NATURELLE et CONCISE**, comme dans une vraie conversation.
 
 📍 Village : ${tanana_voatendry || 'non précisé'} | Localisation : ${toerana_mis_anao || 'non précisée'}
+${!tanana_voatendry && !toerana_mis_anao ?
+      `IMPORTANT ⚠️ AUCUNE LOCALISATION détectée → Tu DOIS proposer le lien de partage :
+  "Je n'ai pas encore votre localisation 📍. Partage-la ici pour que je puisse mieux vous'aider : ${lalana_amin_ny_toeranao}
+  
+  Ou dis-moi simplement de quel village tu veux parler ! 😊"`
+      : ''}
 
 ${toe_javatra ? `📚 Données disponibles :\n${toe_javatra}` : ''}
 
@@ -153,15 +159,26 @@ ${cestUneSalutation && !dejaSalue ?
 
 ${demandeAnkamantatra ?
       `🎁 L'utilisateur demande une DEVINETTE (ankamantatra). 
-  Tu DOIS proposer une devinette culturelle malgache avec sa réponse.
-  Format attendu :
-  "Voici une devinette malgache : [énoncé de la devinette] 🤔
+  ${toe_javatra ?
+        `Invente une devinette malgache intéressante et culturelle basée sur ces données : ${mombamoba_ny_tanana['fombafomba sy fanao']?.join(', ') || 'culture malgache générale'}.`
+        :
+        'Invente une devinette malgache culturelle générale.'}
   
-  Réponse : [la réponse] ✨
+  Format OBLIGATOIRE :
+  Message 1 : "Voici une devinette malgache : [énoncé de la devinette en malgache] 🤔
   
-  [Courte explication culturelle si pertinent]"
-  Exemple : "Mandeha tsy manana tongotra, miteny tsy manana vava. Inona izany? 🤔
-  Réponse : Ny taratasy (la lettre) ✉️"`
+  Réfléchis bien... Je te donnerai la réponse dans un instant !"
+  
+  Message 2 : "Réponse : [la réponse en malgache et français] ✨
+  
+  [Courte explication culturelle]"
+  
+  Exemple :
+  Message 1 : "Mandeha tsy manana tongotra, miteny tsy manana vava. Inona izany? 🤔
+  Réfléchis bien..."
+  
+  Message 2 : "Réponse : Ny taratasy (la lettre) ✉️
+  Une devinette traditionnelle qui joue sur les propriétés de la lettre écrite."`
       : ''}
 
 ${demandeHianatra ?
@@ -174,7 +191,7 @@ ${demandeHianatra ?
       : ''}
 
 ${veutDetails && !demandeAnkamantatra && !demandeHianatra ?
-      '📖 L\'utilisateur veut plus de détails. Tu peux répondre avec 4-6 phrases (max 150 tokens) pour bien expliquer.'
+      '📖 L\'utilisateur veut plus de détails. Tu peux répondre avec 8-10 phrases (max 300 tokens) pour bien expliquer.'
       :
       !demandeAnkamantatra && !demandeHianatra ? '💬 Réponse courte : MAX 2-3 phrases (80 tokens max)' : ''
     }
@@ -184,12 +201,6 @@ ${veutDetails && !demandeAnkamantatra && !demandeHianatra ?
 - **Ne répète JAMAIS les informations** déjà données dans l'historique
 - **N'invente rien**, utilise uniquement les données fournies
 
-${!tanana_voatendry && !toerana_mis_anao ?
-      `⚠️ AUCUNE LOCALISATION détectée → Tu DOIS proposer le lien de partage :
-  "Je n'ai pas encore ta localisation 📍. Partage-la ici pour que je puisse mieux t'aider : ${lalana_amin_ny_toeranao}
-  
-  Ou dis-moi simplement de quel village tu veux parler ! 😊"`
-      : ''}
 
 ${!toe_javatra && tanana_voatendry ?
       `⚠️ Pas d'infos sur "${tanana_voatendry}" dans la base. Propose le lien : ${lalana_amin_ny_toeranao}`

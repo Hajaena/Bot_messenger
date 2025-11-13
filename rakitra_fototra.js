@@ -36,14 +36,16 @@ function getQuickReplies() {
   ];
 }
 
-const mandefa_someso_any_aminny_messenger = async (mpandray_ID, somesoSoratra) => {
+const mandefa_someso_any_aminny_messenger = async (mpandray_ID, somesoSoratra, showQuickReplies = true) => {
   const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
   const url = `https://graph.facebook.com/v17.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`;
 
   const baseMessage = {
-    text: somesoSoratra,
-    quick_replies: getQuickReplies()
+    text: somesoSoratra
   };
+  if (showQuickReplies) {
+    baseMessage.quick_replies = getQuickReplies();
+  }
 
   const vatatena = {
     recipient: { id: mpandray_ID },
@@ -80,8 +82,10 @@ tetikasa.post('/api/receive-location', async (fangatahana, valiny) => {
   const Toeranamisyanao = await makaFanazavanaFanampinymombanyToeranamisyanao(Mits, Mat);
 
   if (!Toeranamisyanao) {
-    return valiny.status(500).send('Miala tsiny fa tsy fantatra tsara hoe aiza tsara no misy anao');
+    return valiny.status(500).send('Désolé, nous n\'avons pas pu déterminer précisément votre emplacement');
   }
+  const lalana = process.env.SERVERAN_I_NGROK
+  const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${ny_Mpandefa}`
 
   const somesoSoratra = `Vous êtes actuellement à ${Toeranamisyanao.Manodidina}. Merci pour votre confiance.
 Qu'aimeriez-vous découvrir à propos de ce lieu ? 📍
@@ -90,11 +94,23 @@ Qu'aimeriez-vous découvrir à propos de ce lieu ? 📍
  ✨ Voici quelques pistes que je peux vous proposer :
 `;
 
+  const somesoSoratraTsymisytoerana = `Vous êtes dans un lieu inconnu 😢. Merci de réessayer pour que je puisse trouver votre position.
+
+Voici le lien : ${lalana_amin_ny_toeranao}
+`;
+
+
   try {
-    await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratra, true);
-    valiny.status(200).send("Votre position a bien été reçue, merci beaucoup");
-    console.log(Toeranamisyanao.Manodidina)
-    setExportedLocation(ny_Mpandefa, Toeranamisyanao.Manodidina)
+    if (Toeranamisyanao.Manodidina !== 'inconnu') {
+      await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratra, true);
+      valiny.status(200).send("Votre position a bien été reçue, merci beaucoup");
+      console.log(Toeranamisyanao.Manodidina)
+      setExportedLocation(ny_Mpandefa, Toeranamisyanao.Manodidina)
+    } else {
+      await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratraTsymisytoerana, false);
+      valiny.status(200).send("Votre position n'a pas pu être déterminée précisément.");
+    }
+
   } catch (err) {
     console.error('Il y a un problème pour récupérer votre position', err.message);
     valiny.status(200).send("Votre position ne nous est pas parvenue, veuillez la renvoyer s'il vous plaît.");
