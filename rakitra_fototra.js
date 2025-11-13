@@ -117,6 +117,10 @@ Voici le lien : ${lalana_amin_ny_toeranao}
   }
 });
 
+tetikasa.get('/ping', (req, res) => {
+  res.status(200).send('✅ Serveur Tsara ho Fantatra est bien réveillé');
+});
+
 tetikasa.listen(lavaka, () => {
   console.log(`🥹 Tsara ho Fantatra dia mande ao amin'ny lavaka http://localhost:${lavaka}`);
 });
