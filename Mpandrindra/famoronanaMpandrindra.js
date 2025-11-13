@@ -73,8 +73,11 @@ function veutHianatra(texte) {
   const patterns = [
     /\bhianatra\b/i,
     /\bétudier\b/i,
+    /\betudier\b/i,
+    /\bEtudier\b/i,
     /\bapprendre\b/i,
     /\béducation\b/i,
+    /\beducation\b/i,
     /\benseigne(-moi)?\b/i,
     /\bapprends(-moi)?\b/i
   ];
