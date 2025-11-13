@@ -84,15 +84,26 @@ tetikasa.post('/api/receive-location', async (fangatahana, valiny) => {
   if (!Toeranamisyanao) {
     return valiny.status(500).send('Désolé, nous n\'avons pas pu déterminer précisément votre emplacement');
   }
+
+  const Angona_Manodidina = require('./tahiry/tananaVoafantina.json');
+  const nomVillage = Toeranamisyanao.Manodidina;
+  const donneesVillage = Angona_Manodidina[nomVillage];
   const lalana = process.env.SERVERAN_I_NGROK
   const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${ny_Mpandefa}`
 
-  const somesoSoratra = `Vous êtes actuellement à ${Toeranamisyanao.Manodidina}. Merci pour votre confiance.
-Qu'aimeriez-vous découvrir à propos de ce lieu ? 📍
+  let somesoSoratra = `📍 Vous êtes actuellement à ${nomVillage}. Merci pour votre confiance !\n\n`;
 
-
- ✨ Voici quelques pistes que je peux vous proposer :
-`;
+  if (donneesVillage && donneesVillage['fady sy fandraràna'] && donneesVillage['fady sy fandraràna'].length > 0) {
+    somesoSoratra += `⚠️ **Interdits (Fady) à respecter :**\n`;
+    donneesVillage['fady sy fandraràna'].forEach((fady, index) => {
+      somesoSoratra += `${index + 1}. ${fady}\n`;
+    });
+    somesoSoratra += `\n✨ Qu'aimeriez-vous découvrir d'autre à propos de ce lieu ?\n`;
+  } else {
+    somesoSoratra += `✨ Qu'aimeriez-vous découvrir à propos de ce lieu ?\n
+    Voici quelques suggestions 🥹
+    `;
+  }
 
   const somesoSoratraTsymisytoerana = `Vous êtes dans un lieu inconnu 😢. Merci de réessayer pour que je puisse trouver votre position.
 
