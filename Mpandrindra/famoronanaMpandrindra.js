@@ -80,6 +80,16 @@ function veutHianatra(texte) {
   ];
   return patterns.some(pattern => pattern.test(texte));
 }
+// Après la fonction veutAnkamantatra
+function veutReponseAnkamantatra(texte, historique) {
+  const demandeReponse = /\b(réponse|solution|answer|c'est quoi)\b/i.test(texte);
+
+  // Vérifier si la dernière réponse du bot était une devinette
+  const derniereReponse = historique.slice(-2).find(msg => msg.role === 'assistant');
+  const etaitDevinette = derniereReponse && /🤔|devinette|Inona izany/i.test(derniereReponse.contenue);
+
+  return demandeReponse && etaitDevinette;
+}
 
 async function Mamokatra(fangatahana, valiny) {
   const { tany_fanoratana, someso, senderId } = fangatahana.body;
@@ -117,6 +127,7 @@ async function Mamokatra(fangatahana, valiny) {
   const veutDetails = veutPlusDeDetails(tany_fanoratana);
   const demandeAnkamantatra = veutAnkamantatra(tany_fanoratana);
   const demandeHianatra = veutHianatra(tany_fanoratana);
+  const demandeReponseAnkamantatra = veutReponseAnkamantatra(tany_fanoratana, tahiry);
 
   // 🆕 Contexte de conversation plus concis (seulement 5 derniers messages)
   const resaka_teo_aloha = tahiry
@@ -160,28 +171,41 @@ ${dejaSalue ? '⚠️ TU AS DÉJÀ SALUÉ dans cette conversation. NE répète P
 ${cestUneSalutation && !dejaSalue ?
       '👋 C\'est une simple salutation. Réponds brièvement (ex: "Salama! Comment puis-je t\'aider avec la culture malgache?") puis STOP.'
       : ''}
-
 ${demandeAnkamantatra ?
       `🎁 L'utilisateur demande une DEVINETTE (ankamantatra). 
   ${toe_javatra ?
-        `Invente une devinette malgache intéressante et culturelle basée sur ces données : ${mombamoba_ny_tanana['fombafomba sy fanao']?.join(', ') || 'culture malgache générale'}.`
+        `Invente une devinette malgache intéressante et/ou culturelle basée sur ces données : ${mombamoba_ny_tanana['fombafomba sy fanao']?.join(', ') || 'culture malgache générale'}.`
         :
         'Invente une devinette malgache culturelle générale.'}
   
+  ⚠️ RÈGLE ABSOLUE : Tu dois donner UNIQUEMENT la devinette dans ce message. 
+  NE DONNE PAS LA RÉPONSE MAINTENANT.
+  L'utilisateur devra répondre ou demander la réponse dans un prochain message.
+  
   Format OBLIGATOIRE :
-  Message 1 : "Voici une devinette malgache : [énoncé de la devinette en malgache] 🤔
+  "Voici une devinette malgache : [énoncé de la devinette en malgache] 🤔
   
-  Réfléchis bien... Je te donnerai la réponse dans un instant !"
+  Sais-tu la réponse ? Dis-moi ce que tu penses, ou tape 'réponse' pour que je te la donne !"
   
-  Message 2 : "Réponse : [la réponse en malgache et français] ✨
+  Exemple correct :
+  "Mandeha tsy manana tongotra, miteny tsy manana vava. Inona izany? 🤔
   
-  [Courte explication culturelle]"
+  Sais-tu la réponse ? Dis-moi ce que tu penses, ou tape 'réponse' pour que je te la donne !"
+  
+  ❌ N'écris JAMAIS "Réponse :" dans ce message.`
+      : ''}
+
+${demandeReponseAnkamantatra ?
+      `🎯 L'utilisateur demande la RÉPONSE à la devinette précédente.
+  
+  Regarde dans l'historique la devinette que tu as posée, et donne maintenant la réponse avec ce format :
+  
+  "Réponse : [la réponse en malgache et ou en français] ✨
+  
+  [Courte explication culturelle de 1-2 phrases]"
   
   Exemple :
-  Message 1 : "Mandeha tsy manana tongotra, miteny tsy manana vava. Inona izany? 🤔
-  Réfléchis bien..."
-  
-  Message 2 : "Réponse : Ny taratasy (la lettre) ✉️
+  "Réponse : Ny taratasy (la lettre) ✉️
   Une devinette traditionnelle qui joue sur les propriétés de la lettre écrite."`
       : ''}
 
@@ -191,6 +215,7 @@ ${demandeHianatra ?
   - Un aspect culturel intéressant à découvrir
   - Une pratique traditionnelle à comprendre
   - Un conseil pour mieux connaître la culture
+  Base toi sur les données disponibles si possible.
   Sois pédagogue et motivant ! (max 150 tokens)`
       : ''}
 
