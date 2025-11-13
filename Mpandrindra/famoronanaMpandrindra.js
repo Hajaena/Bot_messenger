@@ -193,6 +193,8 @@ ${veutDetails && !demandeAnkamantatra && !demandeHianatra ?
 ${!toe_javatra && tanana_voatendry ?
       `- Aucune donnée pour "${tanana_voatendry}", propose le lien : ${lalana_amin_ny_toeranao}\n` : ''}
 
+Voici le lien pour partager la position de l'utilisateur au cas ou il demande : ${lalana_amin_ny_toeranao}
+
 STYLE
 - Ton naturel et conversationnel
 - Base-toi uniquement sur les données fournies
