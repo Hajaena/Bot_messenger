@@ -1,7 +1,7 @@
 // genererMessageLocalisation.js
 // Fichier dédié à la génération des messages de bienvenue lors de la réception de localisation
 
-const { generateWithCohere } = require('../fanamboarana/cohere');
+const { genererAvecFallback } = require('../fanamboarana/mamokatraMiarakaFallback');
 
 /**
  * Génère un message de bienvenue personnalisé quand l'utilisateur partage sa position
@@ -20,6 +20,7 @@ async function genererMessageBienvenue(nomVillage, donneesVillage, lalana_amin_n
 
 CONTEXTE
 L'utilisateur vient de partager sa position GPS et se trouve à : ${nomVillage}
+Tu viens juste de saluer l'utiliateur ne le salue plus.
 
 ${toe_javatra || 'Aucune donnée disponible pour ce lieu.'}
 
@@ -36,12 +37,13 @@ ${donneesVillage && donneesVillage['fady sy fandraràna']?.length > 0
 Réponds maintenant :`.trim();
 
     try {
-        const reponse = await generateWithCohere(prompt);
+        // ✅ Utilise le système de fallback automatique
+        const reponse = await genererAvecFallback(prompt);
         return reponse;
     } catch (err) {
-        console.error('Erreur génération message bienvenue:', err);
-        // Message de fallback en cas d'erreur
-        return `📍 Vous êtes actuellement à ${nomVillage}. Merci pour votre confiance !\n Voici quelque piste pour découvrir ce village 🥰\n\n✨ Qu'aimeriez-vous découvrir à propos de ce lieu ?`;
+        console.error('❌ Tous les modèles ont échoué pour le message de bienvenue:', err);
+        // Message de fallback final en cas d'échec de tous les modèles
+        return `📍 Vous êtes actuellement à ${nomVillage}. Merci pour votre confiance !\nVoici quelque piste pour découvrir ce village 🥰\n\n✨ Qu'aimeriez-vous découvrir à propos de ce lieu ?`;
     }
 }
 
@@ -66,11 +68,12 @@ INSTRUCTIONS
 Réponds maintenant :`.trim();
 
     try {
-        const reponse = await generateWithCohere(prompt);
+        // ✅ Utilise le système de fallback automatique
+        const reponse = await genererAvecFallback(prompt);
         return reponse;
     } catch (err) {
-        console.error('Erreur génération message lieu inconnu:', err);
-        // Message de fallback en cas d'erreur
+        console.error('❌ Tous les modèles ont échoué pour le message lieu inconnu:', err);
+        // Message de fallback final
         return `Vous êtes dans un lieu inconnu 😢. Merci de réessayer pour que je puisse trouver votre position.\n\nVoici le lien : ${lalana_amin_ny_toeranao}`;
     }
 }

@@ -1,5 +1,3 @@
-// rakitra_fototra.js
-
 require('dotenv').config();
 const express = require('express');
 const corsa = require('cors');
@@ -12,7 +10,7 @@ const path = require('path');
 const { makaFanazavanaFanampinymombanyToeranamisyanao } = require('./servisy/servicy_toeranamisyAhy');
 const { setExportedLocation } = require('./tahiry/tahiry_alefa');
 const { saveMessage } = require('./tahiry/memoire');
-const { genererMessageBienvenue, genererMessageLieuInconnu } = require('./miasa_matetika/mpamokatraMessageToerana');
+const { genererMessageBienvenue, genererMessageLieuInconnu } = require('./miasa_matetika/mpamokatraMessageToerana')
 
 const tetikasa = express();
 const lavaka = process.env.PORT || 3000;
@@ -94,8 +92,10 @@ tetikasa.post('/api/receive-location', async (fangatahana, valiny) => {
     let somesoSoratra;
 
     if (Toeranamisyanao.Manodidina !== 'inconnu') {
+      // ✅ Générer le message avec l'IA via la fonction externe
       somesoSoratra = await genererMessageBienvenue(nomVillage, donneesVillage, lalana_amin_ny_toeranao);
 
+      // Sauvegarder dans l'historique
       saveMessage(ny_Mpandefa, 'assistant', somesoSoratra);
 
       await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratra, true);
@@ -103,8 +103,10 @@ tetikasa.post('/api/receive-location', async (fangatahana, valiny) => {
       console.log(Toeranamisyanao.Manodidina)
       setExportedLocation(ny_Mpandefa, Toeranamisyanao.Manodidina)
     } else {
+      // ✅ Générer le message "lieu inconnu" avec l'IA via la fonction externe
       somesoSoratra = await genererMessageLieuInconnu(lalana_amin_ny_toeranao);
 
+      // Sauvegarder dans l'historique
       saveMessage(ny_Mpandefa, 'assistant', somesoSoratra);
 
       await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratra, false);
@@ -119,6 +121,23 @@ tetikasa.post('/api/receive-location', async (fangatahana, valiny) => {
 
 tetikasa.get('/ping', (req, res) => {
   res.status(200).send('✅ Serveur Tsara ho Fantatra est bien réveillé');
+});
+
+const { testerDisponibiliteModeles } = require('./fanamboarana/mamokatraMiarakaFallback');
+tetikasa.get('/test-models', async (req, res) => {
+  try {
+    console.log('🔍 Test de disponibilité des modèles IA...');
+    const resultats = await testerDisponibiliteModeles();
+    res.status(200).json({
+      timestamp: new Date().toISOString(),
+      resultats
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Erreur lors du test des modèles',
+      details: err.message
+    });
+  }
 });
 
 tetikasa.listen(lavaka, () => {

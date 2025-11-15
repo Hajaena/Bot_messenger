@@ -7,7 +7,7 @@ if (!process.env.GOOGLE_API_KEY) {
 
 const geminiAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 async function mamokatra_miaraka_gemini(tany_fanoratana) {
-    const model = geminiAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = geminiAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const result = await model.generateContent(tany_fanoratana);
     const response = await result.response;

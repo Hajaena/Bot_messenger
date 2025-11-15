@@ -1,6 +1,6 @@
 // famokaranaMpandrindra.js
 require('dotenv').config()
-const { generateWithCohere } = require('../fanamboarana/cohere');
+const { genererAvecFallback } = require('../fanamboarana/mamokatraMiarakaFallback');
 const Angona_Manodidina = require('../tahiry/tananaVoafantina.json');
 const { tenyNatoraly } = require('../miasa_matetika/fanatsaranaTeny');
 const { getExportedLocation } = require('../tahiry/tahiry_alefa');
@@ -216,7 +216,9 @@ Réponds maintenant :`.trim();
       sender_action: "typing_on"
     });
 
-    const teny = await generateWithCohere(fullPrompt);
+    // ✅ Utilise le système de fallback automatique (Gemini → Cohere)
+    console.log('🔄 Génération avec fallback Gemini → Cohere...');
+    const teny = await genererAvecFallback(fullPrompt);
 
     saveMessage(senderId, 'user', tany_fanoratana);
     saveMessage(senderId, 'assistant', teny);
@@ -226,10 +228,24 @@ Réponds maintenant :`.trim();
       valiny.json({ result: teny });
     }, Math.min(teny.length * 8, 1200));
   } catch (err) {
-    console.error('Erreur génération:', err);
+    console.error('❌ ERREUR CRITIQUE: Tous les modèles ont échoué:', err);
+
+    const messageErreur = "Désolé, je rencontre un problème technique temporaire. Pouvez-vous réessayer dans quelques instants ? 🙏";
+
+    // Envoyer le message d'erreur à l'utilisateur via Messenger
+    try {
+      callSendAPI({
+        recipient: { id: senderId },
+        message: { text: messageErreur }
+      });
+    } catch (messengerErr) {
+      console.error('Erreur lors de l\'envoi du message d\'erreur:', messengerErr);
+    }
+
     valiny.status(500).json({
       error: 'Fahadisoana tamin ny famoronana vontoatiny',
       details: err.message || err.toString(),
+      result: messageErreur
     });
   }
 }
