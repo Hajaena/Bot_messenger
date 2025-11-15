@@ -1,6 +1,6 @@
 const { CohereClient } = require('cohere-ai');
 
-const cohere = new CohereClient({ apiKey: process.env.COHERE_API_KEY });
+const cohere = new CohereClient({ apiKey: process.env.CO_API_KEY });
 
 async function generateWithCohere(tany_fanoratana) {
   try {

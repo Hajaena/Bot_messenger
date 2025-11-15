@@ -11,10 +11,11 @@ const path = require('path');
 
 const { makaFanazavanaFanampinymombanyToeranamisyanao } = require('./servisy/servicy_toeranamisyAhy');
 const { setExportedLocation } = require('./tahiry/tahiry_alefa');
+const { saveMessage } = require('./tahiry/memoire');
+const { genererMessageBienvenue, genererMessageLieuInconnu } = require('./miasa_matetika/mpamokatraMessageToerana');
 
 const tetikasa = express();
 const lavaka = process.env.PORT || 3000;
-
 
 tetikasa.use(corsa());
 tetikasa.use(vatana_i_parsera.json());
@@ -26,7 +27,6 @@ tetikasa.use('/webhook', ireo_lalan_i_Webhook);
 // Fonction centralisée des boutons
 function getQuickReplies() {
   return [
-
     { content_type: "text", title: "Interdits", payload: "INTERDITS_PAYLOAD" },
     { content_type: "text", title: "Coutumes", payload: "FOMBAFOMBA_PAYLOAD" },
     { content_type: "text", title: "Conseils ", payload: "TOROHEVITRA_PAYLOAD" },
@@ -78,7 +78,6 @@ tetikasa.post('/api/receive-location', async (fangatahana, valiny) => {
 
   console.log(`Toerana voaray ${ny_Mpandefa} : Mitsangana=${Mits}, Alavana=${Mat}`)
 
-  // ity lay fampiasana azy 
   const Toeranamisyanao = await makaFanazavanaFanampinymombanyToeranamisyanao(Mits, Mat);
 
   if (!Toeranamisyanao) {
@@ -91,34 +90,24 @@ tetikasa.post('/api/receive-location', async (fangatahana, valiny) => {
   const lalana = process.env.SERVERAN_I_NGROK
   const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${ny_Mpandefa}`
 
-  let somesoSoratra = `📍 Vous êtes actuellement à ${nomVillage}. Merci pour votre confiance !\n\n`;
-
-  if (donneesVillage && donneesVillage['fady sy fandraràna'] && donneesVillage['fady sy fandraràna'].length > 0) {
-    somesoSoratra += `⚠️ **Interdits (Fady) à respecter :**\n`;
-    donneesVillage['fady sy fandraràna'].forEach((fady, index) => {
-      somesoSoratra += `${index + 1}. ${fady}\n`;
-    });
-    somesoSoratra += `\n✨ Qu'aimeriez-vous découvrir d'autre à propos de ce lieu ?\n`;
-  } else {
-    somesoSoratra += `✨ Qu'aimeriez-vous découvrir à propos de ce lieu ?\n
-    Voici quelques suggestions 🥹
-    `;
-  }
-
-  const somesoSoratraTsymisytoerana = `Vous êtes dans un lieu inconnu 😢. Merci de réessayer pour que je puisse trouver votre position.
-
-Voici le lien : ${lalana_amin_ny_toeranao}
-`;
-
-
   try {
+    let somesoSoratra;
+
     if (Toeranamisyanao.Manodidina !== 'inconnu') {
+      somesoSoratra = await genererMessageBienvenue(nomVillage, donneesVillage, lalana_amin_ny_toeranao);
+
+      saveMessage(ny_Mpandefa, 'assistant', somesoSoratra);
+
       await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratra, true);
       valiny.status(200).send("Votre position a bien été reçue, merci beaucoup");
       console.log(Toeranamisyanao.Manodidina)
       setExportedLocation(ny_Mpandefa, Toeranamisyanao.Manodidina)
     } else {
-      await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratraTsymisytoerana, false);
+      somesoSoratra = await genererMessageLieuInconnu(lalana_amin_ny_toeranao);
+
+      saveMessage(ny_Mpandefa, 'assistant', somesoSoratra);
+
+      await mandefa_someso_any_aminny_messenger(ny_Mpandefa, somesoSoratra, false);
       valiny.status(200).send("Votre position n'a pas pu être déterminée précisément.");
     }
 

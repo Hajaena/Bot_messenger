@@ -1,5 +1,7 @@
+require('dotenv').config()
 const mandefa = require('node-fetch');
 const { VERIFY_TOKEN, PAGE_ACCESS_TOKEN } = require('../fanamboarana')
+const link = process.env.SERVERAN_I_NGROK
 
 const tafatafa = {}; // BDD messenger
 
@@ -38,8 +40,9 @@ async function someso_Miditra(fangatahana, valiny) {
         tafatafa[ny_mpandefa].push({ role: 'user', contenue: tany_fisoratana });
         const history = tafatafa[ny_mpandefa].slice(-10);
 
+
         try {
-          const valinteny = await mandefa('https://tsarahofantatra.onrender.com/generate', {
+          const valinteny = await mandefa(`${link}/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tany_fanoratana: tany_fisoratana, messages: history, senderId: ny_mpandefa }), //tany_fanoratana
