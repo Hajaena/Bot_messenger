@@ -33,6 +33,7 @@ ${donneesVillage && donneesVillage['fady sy fandraràna']?.length > 0
 - Invite l'utilisateur à découvrir plus sur ce lieu avec ces suggestions : "Interdits, Coutumes, Conseils, Histoire, Etudier et Ankamantatra", Ne les répète plus car elles sont déjà présente! juste invite-le (1 à 2 phrases max)
 - Ton naturel et bienveillant
 - Ajoute des émojis
+- Parle en malgache ou en français selon la langue utilisée précédemment par l'utilisateur
 
 Réponds maintenant :`.trim();
 

@@ -20,6 +20,39 @@ function callSendAPI(body) {
     .catch(err => console.error('Erreur SendAPI:', err));
 }
 
+// ✅ NOUVELLE FONCTION: Envoyer un message avec bouton de localisation
+function envoyerMessageAvecBoutonLocalisation(senderId, texteMessage, lienLocalisation) {
+  const body = {
+    recipient: { id: senderId },
+    message: {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: texteMessage,
+          buttons: [
+            {
+              type: "web_url",
+              url: lienLocalisation,
+              title: "📍 Partager ma position",
+              webview_height_ratio: "tall"
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+    .then(res => res.json())
+    .then(json => console.log('✅ Message avec bouton envoyé:', json))
+    .catch(err => console.error('❌ Erreur envoi bouton:', err));
+}
+
 // Fonction pour détecter si une salutation a déjà été faite récemment
 function aDejaSalue(historique) {
   if (!historique || historique.length === 0) return false;
@@ -37,6 +70,23 @@ function aDejaSalue(historique) {
 function estUneSalutation(texte) {
   const salutations = /^(bonjour|salut|salama|hello|hi|bjr|bsr|bonsoir|manahoana)[\s!?.,]*$/i;
   return salutations.test(texte.trim());
+}
+
+// ✅ NOUVELLE FONCTION: Détecter les demandes de localisation
+function demandeLocalisation(texte) {
+  const patterns = [
+    /\blocalisation\b/i,
+    /\bposition\b/i,
+    /\bma position\b/i,
+    /\boù je suis\b/i,
+    /\blieu\b/i,
+    /\btoerana\b/i,
+    /\bpartager.*position\b/i,
+    /\bpartager.*localisation\b/i,
+    /\benvoyer.*position\b/i,
+    /\blien\b/i
+  ];
+  return patterns.some(pattern => pattern.test(texte));
 }
 
 // Fonction pour détecter si l'utilisateur veut plus de détails
@@ -116,6 +166,40 @@ async function Mamokatra(fangatahana, valiny) {
     console.log('📍 Position détectée:', toerana_mis_anao + ' Tanana tinao ho fantatra :' + tanana_voatendry)
   }
 
+  const lalana = process.env.SERVERAN_I_NGROK
+  const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${senderId}`
+
+  // ✅ DÉTECTION: Si l'utilisateur demande le lien de localisation
+  const demandeLien = demandeLocalisation(tany_fanoratana);
+
+  if (demandeLien) {
+    console.log('🔗 Demande de localisation détectée');
+
+    // Message explicatif
+    const messageExplicatif = toerana_mis_anao
+      ? `Vous êtes actuellement à ${toerana_mis_anao}. 📍\n\nSi vous souhaitez mettre à jour votre position, cliquez sur le bouton ci-dessous :`
+      : `Pour que je puisse vous fournir des informations précises sur les coutumes et interdits de votre région, partagez votre position en cliquant sur le bouton ci-dessous :`;
+
+    // Afficher l'indicateur "typing"
+    callSendAPI({
+      recipient: { id: senderId },
+      sender_action: "typing_on"
+    });
+
+    // Attendre un peu avant d'envoyer le bouton
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Envoyer UNIQUEMENT le message avec le bouton (pas de texte séparé)
+    envoyerMessageAvecBoutonLocalisation(senderId, messageExplicatif, lalana_amin_ny_toeranao);
+
+    // Sauvegarder dans l'historique
+    saveMessage(senderId, 'user', tany_fanoratana);
+    saveMessage(senderId, 'assistant', messageExplicatif + ' [Bouton: Partager ma position]');
+
+    // ✅ IMPORTANT: Retourner SANS envoyer valiny.json()
+    return valiny.status(200).json({ success: true, action: 'bouton_envoye' });
+  }
+
   const mombamoba_ny_tanana = tanana_voatendry ? Angona_Manodidina[tanana_voatendry] : null;
   const toe_javatra = mombamoba_ny_tanana
     ? `Infos sur ${tanana_voatendry} :\n` +
@@ -143,17 +227,14 @@ async function Mamokatra(fangatahana, valiny) {
     )
     .join('\n');
 
-  const lalana = process.env.SERVERAN_I_NGROK
-  const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${senderId}`
-
-  // ✅ PROMPT OPTIMISÉ
+  // ✅ PROMPT OPTIMISÉ avec détection de demande de lien
   const fullPrompt = `Tu es Tsara ho Fantatra, assistant culturel malgache chaleureux et compétent pour les touristes et surtout pour les jeunes malgaches qui souhaite approfondire ces connaissances à ses propres cultures.
 
 CONTEXTE
 ${tanana_voatendry && 'Village :' + tanana_voatendry}
 Localisation : ${toerana_mis_anao || 'non précisée'}
 ${!tanana_voatendry && !toerana_mis_anao ?
-      `Aucune localisation détectée. Voici le lien pour partager la position de l'utilisateur: ${lalana_amin_ny_toeranao}` : ''}
+      `Aucune localisation détectée.` : ''}
 
 ${toe_javatra || ''}
 
@@ -189,15 +270,16 @@ ${veutDetails && !demandeAnkamantatra && !demandeHianatra ?
       '- Développe ta réponse précédente (6-8 phrases)\n- Ajoute exemples et anecdotes\n' :
       !demandeAnkamantatra && !demandeHianatra ? '- Réponds de façon concise (2-4 phrases)\n' : ''}
 ${!toe_javatra && tanana_voatendry ?
-      `- Aucune donnée pour "${tanana_voatendry}", propose le lien : ${lalana_amin_ny_toeranao}\n` : ''}
-
-Voici le lien pour partager la position de l'utilisateur au cas ou il demande : ${lalana_amin_ny_toeranao}
+      `- Aucune donnée pour "${tanana_voatendry}", invite l'utilisateur à partager sa position pour obtenir des infos précises\n` : ''}
+${!toerana_mis_anao ?
+      `- Si l'utilisateur te demande des infos locales mais n'a pas partagé sa position, invite-le gentiment à partager sa localisation\n` : ''}
 
 STYLE
 - Ton naturel et conversationnel
 - Base-toi uniquement sur les données fournies
 - Ne répète pas les infos de l'historique
 - 6 émojis maximum
+- IMPORTANT: Ne mentionne JAMAIS de lien URL dans ta réponse. Si tu dois parler de localisation, dis juste "vous pouvez partager votre position"
 
 Réponds maintenant :`.trim();
 
@@ -223,10 +305,36 @@ Réponds maintenant :`.trim();
     saveMessage(senderId, 'user', tany_fanoratana);
     saveMessage(senderId, 'assistant', teny);
 
-    // Délai proportionnel à la longueur de la réponse
-    setTimeout(() => {
-      valiny.json({ result: teny });
-    }, Math.min(teny.length * 8, 1200));
+    // ✅ Si le bot mentionne la localisation, ajouter un bouton
+    const mentionneLocalisation = /partager.*position|partager.*localisation|votre position|votre localisation/i.test(teny);
+
+    if (mentionneLocalisation && !toerana_mis_anao) {
+      console.log('📍 Ajout automatique du bouton de localisation');
+
+      // Envoyer d'abord la réponse textuelle directement via Messenger
+      callSendAPI({
+        recipient: { id: senderId },
+        message: { text: teny }
+      });
+
+      // Attendre un peu avant d'envoyer le bouton
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Puis envoyer le bouton
+      envoyerMessageAvecBoutonLocalisation(
+        senderId,
+        "Cliquez sur le bouton ci-dessous pour partager votre position :",
+        lalana_amin_ny_toeranao
+      );
+
+      // Retourner la réponse à l'API sans renvoyer le message
+      return valiny.status(200).json({ success: true, result: teny, hasButtonAdded: true });
+    } else {
+      // Réponse normale sans bouton
+      setTimeout(() => {
+        valiny.json({ result: teny });
+      }, Math.min(teny.length * 8, 1200));
+    }
   } catch (err) {
     console.error('❌ ERREUR CRITIQUE: Tous les modèles ont échoué:', err);
 
