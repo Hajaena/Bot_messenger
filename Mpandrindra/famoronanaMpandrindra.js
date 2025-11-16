@@ -1,4 +1,4 @@
-// famokaranaMpandrindra.js
+// famokaranaMpandrindra.js - VERSION CORRIGÉE
 require('dotenv').config()
 const { genererAvecFallback } = require('../fanamboarana/mamokatraMiarakaFallback');
 const Angona_Manodidina = require('../tahiry/tananaVoafantina.json');
@@ -6,6 +6,11 @@ const { tenyNatoraly } = require('../miasa_matetika/fanatsaranaTeny');
 const { getExportedLocation } = require('../tahiry/tahiry_alefa');
 const fetch = require('node-fetch');
 const { getHistorique, saveMessage } = require('../tahiry/memoire')
+const {
+  genererImageAvecFlux,
+  demandeGenerationImage,
+  extrairePromptImage
+} = require('../fanamboarana/huggingface_image');
 
 const normaly = str => str.normalize("NFC");
 
@@ -20,7 +25,61 @@ function callSendAPI(body) {
     .catch(err => console.error('Erreur SendAPI:', err));
 }
 
-// ✅ NOUVELLE FONCTION: Envoyer un message avec bouton de localisation
+// ✅ FONCTION CORRIGÉE: Envoyer une image via Messenger
+async function envoyerImage(senderId, imageBuffer, caption = null) {
+  const FormData = require('form-data');
+
+  // Si caption existe, l'envoyer d'abord comme message texte séparé
+  if (caption) {
+    callSendAPI({
+      recipient: { id: senderId },
+      message: { text: caption }
+    });
+
+    // Attendre un peu avant d'envoyer l'image
+    await new Promise(resolve => setTimeout(resolve, 800));
+  }
+
+  // Puis envoyer l'image seule
+  const form = new FormData();
+  form.append('recipient', JSON.stringify({ id: senderId }));
+  form.append('message', JSON.stringify({
+    attachment: {
+      type: "image",
+      payload: {}
+    }
+  }));
+  form.append('filedata', imageBuffer, {
+    filename: 'image.png',
+    contentType: 'image/png'
+  });
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v19.0/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`,
+      {
+        method: 'POST',
+        body: form,
+        headers: form.getHeaders()
+      }
+    );
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log('✅ Image envoyée avec succès:', result);
+      return result;
+    } else {
+      console.error('❌ Erreur envoi image:', result);
+      throw new Error(result.error?.message || 'Erreur lors de l\'envoi de l\'image');
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'envoi de l\'image:', error);
+    throw error;
+  }
+}
+
+// Envoyer un message avec bouton de localisation
 function envoyerMessageAvecBoutonLocalisation(senderId, texteMessage, lienLocalisation) {
   const body = {
     recipient: { id: senderId },
@@ -72,7 +131,7 @@ function estUneSalutation(texte) {
   return salutations.test(texte.trim());
 }
 
-// ✅ NOUVELLE FONCTION: Détecter les demandes de localisation
+// Détecter les demandes de localisation
 function demandeLocalisation(texte) {
   const patterns = [
     /\blocalisation\b/i,
@@ -153,6 +212,74 @@ async function Mamokatra(fangatahana, valiny) {
     return valiny.status(400).json({ error: 'Misy zavatra tsy ampy na tsy mitombona' });
   }
 
+  if (demandeGenerationImage(tany_fanoratana)) {
+    console.log('🎨 Demande de génération d\'image détectée');
+
+    try {
+      callSendAPI({
+        recipient: { id: senderId },
+        message: { text: "Création de votre image..." }
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      callSendAPI({
+        recipient: { id: senderId },
+        sender_action: "typing_on"
+      });
+
+      const promptImage = extrairePromptImage(tany_fanoratana);
+      console.log('📝 Prompt image:', promptImage);
+
+      const imageBuffer = await genererImageAvecFlux(promptImage);
+
+      // ✅ CORRECTION: Envoyer l'image avec le caption
+      await envoyerImage(
+        senderId,
+        imageBuffer,
+        `${promptImage} J'espère que cela vous plaît ! 🥹🥰`
+      );
+
+      // Sauvegarder dans l'historique
+      saveMessage(senderId, 'user', tany_fanoratana);
+      saveMessage(senderId, 'assistant', `[Image générée: ${promptImage}]`);
+
+      return valiny.status(200).json({
+        success: true,
+        action: 'image_generee',
+        prompt: promptImage
+      });
+
+    } catch (error) {
+      console.error('❌ Erreur génération image:', error);
+
+      let messageErreur = "Désolé, je n'ai pas pu générer l'image. ";
+
+      // Gérer le cas spécifique du chargement avec temps d'attente
+      if (error.message.includes('en cours de chargement')) {
+        const match = error.message.match(/en cours de chargement\|(\d+)/);
+        const waitTime = match ? match[1] : '30';
+        messageErreur = `🔄 Le modèle se réveille... Réessayez dans ${waitTime} secondes. ⏳`;
+      } else if (error.message.includes('Timeout')) {
+        messageErreur += "La génération a pris trop de temps, réessayez. ⏱️";
+      } else if (error.message.includes('HUGGINGFACE_TOKEN')) {
+        messageErreur = "⚠️ Configuration manquante. Contactez l'administrateur.";
+      } else {
+        messageErreur += "Une erreur technique est survenue. Réessayez dans quelques instants. 🙏";
+      }
+
+      callSendAPI({
+        recipient: { id: senderId },
+        message: { text: messageErreur }
+      });
+
+      return valiny.status(500).json({
+        error: 'Erreur génération image',
+        details: error.message
+      });
+    }
+  }
+
   const teny_normaly = normaly(tenyNatoraly(tany_fanoratana));
   const lakile_tanana = Object.keys(Angona_Manodidina);
 
@@ -169,7 +296,6 @@ async function Mamokatra(fangatahana, valiny) {
   const lalana = process.env.SERVERAN_I_NGROK
   const lalana_amin_ny_toeranao = `${lalana}/toerana_misy_ahy.html?senderId=${senderId}`
 
-  // ✅ DÉTECTION: Si l'utilisateur demande le lien de localisation
   const demandeLien = demandeLocalisation(tany_fanoratana);
 
   if (demandeLien) {
@@ -186,17 +312,13 @@ async function Mamokatra(fangatahana, valiny) {
       sender_action: "typing_on"
     });
 
-    // Attendre un peu avant d'envoyer le bouton
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Envoyer UNIQUEMENT le message avec le bouton (pas de texte séparé)
     envoyerMessageAvecBoutonLocalisation(senderId, messageExplicatif, lalana_amin_ny_toeranao);
 
-    // Sauvegarder dans l'historique
     saveMessage(senderId, 'user', tany_fanoratana);
     saveMessage(senderId, 'assistant', messageExplicatif + ' [Bouton: Partager ma position]');
 
-    // ✅ IMPORTANT: Retourner SANS envoyer valiny.json()
     return valiny.status(200).json({ success: true, action: 'bouton_envoye' });
   }
 
@@ -217,7 +339,6 @@ async function Mamokatra(fangatahana, valiny) {
   const demandeHianatra = veutHianatra(tany_fanoratana);
   const demandeReponseAnkamantatra = veutReponseAnkamantatra(tany_fanoratana, tahiry);
 
-  // Contexte de conversation (8 derniers messages)
   const resaka_teo_aloha = tahiry
     .slice(-8)
     .map(someso =>
@@ -227,7 +348,6 @@ async function Mamokatra(fangatahana, valiny) {
     )
     .join('\n');
 
-  // ✅ PROMPT OPTIMISÉ avec détection de demande de lien
   const fullPrompt = `Tu es Tsara ho Fantatra, assistant culturel malgache chaleureux et compétent pour les touristes et surtout pour les jeunes malgaches qui souhaite approfondire ces connaissances à ses propres cultures.
 
 CONTEXTE
@@ -281,6 +401,9 @@ STYLE
 - 6 émojis maximum
 - IMPORTANT: Ne mentionne JAMAIS de lien URL dans ta réponse. Si tu dois parler de localisation, dis juste "vous pouvez partager votre position"
 
+IMAGE
+- Tu peux générer une image si l'utilisateur le demande. Il suffit juste de lui demander gentiment de préciser son idée d'image
+
 Réponds maintenant :`.trim();
 
   console.log("Toerana misy ahy:", toerana_mis_anao)
@@ -298,39 +421,32 @@ Réponds maintenant :`.trim();
       sender_action: "typing_on"
     });
 
-    // ✅ Utilise le système de fallback automatique (Gemini → Cohere)
-    console.log('🔄 Génération avec fallback Gemini → Cohere...');
+    console.log('🔄 Génération avec fallback Gemini → HuggingFace → Cohere...');
     const teny = await genererAvecFallback(fullPrompt);
 
     saveMessage(senderId, 'user', tany_fanoratana);
     saveMessage(senderId, 'assistant', teny);
 
-    // ✅ Si le bot mentionne la localisation, ajouter un bouton
     const mentionneLocalisation = /partager.*position|partager.*localisation|votre position|votre localisation/i.test(teny);
 
     if (mentionneLocalisation && !toerana_mis_anao) {
       console.log('📍 Ajout automatique du bouton de localisation');
 
-      // Envoyer d'abord la réponse textuelle directement via Messenger
       callSendAPI({
         recipient: { id: senderId },
         message: { text: teny }
       });
 
-      // Attendre un peu avant d'envoyer le bouton
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Puis envoyer le bouton
       envoyerMessageAvecBoutonLocalisation(
         senderId,
         "Cliquez sur le bouton ci-dessous pour partager votre position :",
         lalana_amin_ny_toeranao
       );
 
-      // Retourner la réponse à l'API sans renvoyer le message
       return valiny.status(200).json({ success: true, result: teny, hasButtonAdded: true });
     } else {
-      // Réponse normale sans bouton
       setTimeout(() => {
         valiny.json({ result: teny });
       }, Math.min(teny.length * 8, 1200));
@@ -340,7 +456,6 @@ Réponds maintenant :`.trim();
 
     const messageErreur = "Désolé, je rencontre un problème technique temporaire. Pouvez-vous réessayer dans quelques instants ? 🙏";
 
-    // Envoyer le message d'erreur à l'utilisateur via Messenger
     try {
       callSendAPI({
         recipient: { id: senderId },
