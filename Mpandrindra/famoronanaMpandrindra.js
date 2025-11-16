@@ -393,6 +393,8 @@ ${!toe_javatra && tanana_voatendry ?
       `- Aucune donnée pour "${tanana_voatendry}", invite l'utilisateur à partager sa position pour obtenir des infos précises\n` : ''}
 ${!toerana_mis_anao ?
       `- Si l'utilisateur te demande des infos locales mais n'a pas partagé sa position, invite-le gentiment à partager sa localisation\n` : ''}
+      
+Donne les réponses que tu connais meme si elles ne sont pas dans les données.
 
 STYLE
 - Ton naturel et conversationnel
